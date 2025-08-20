@@ -1,0 +1,89 @@
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::Json,
+};
+use serde_json::{json, Value};
+use uuid::Uuid;
+
+use crate::{storage::FileStorage, models::{CreateMessage, UpdateMessage}};
+
+pub type AppState = std::sync::Arc<FileStorage>;
+
+pub async fn create_message(
+    State(storage): State<AppState>,
+    Json(payload): Json<CreateMessage>,
+) -> Result<(StatusCode, Json<Value>), StatusCode> {
+    match storage.create_message(payload).await {
+        Ok(message) => Ok((StatusCode::CREATED, Json(json!(message)))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn get_messages(
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    match storage.get_messages().await {
+        Ok(messages) => Ok(Json(json!(messages))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn get_message(
+    Path(id): Path<String>,
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let uuid = Uuid::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    
+    match storage.get_message(uuid).await {
+        Ok(Some(message)) => Ok(Json(json!(message))),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn update_message(
+    Path(id): Path<String>,
+    State(storage): State<AppState>,
+    Json(payload): Json<UpdateMessage>,
+) -> Result<Json<Value>, StatusCode> {
+    let uuid = Uuid::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    
+    match storage.update_message(uuid, payload).await {
+        Ok(Some(message)) => Ok(Json(json!(message))),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn delete_message(
+    Path(id): Path<String>,
+    State(storage): State<AppState>,
+) -> Result<StatusCode, StatusCode> {
+    let uuid = Uuid::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    
+    match storage.delete_message(uuid).await {
+        Ok(true) => Ok(StatusCode::NO_CONTENT),
+        Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+// 新增客户端状态相关 API
+pub async fn get_clients(
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    match storage.get_clients().await {
+        Ok(clients) => Ok(Json(json!(clients))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn get_stats(
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    match storage.get_stats().await {
+        Ok(stats) => Ok(Json(json!(stats))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
