@@ -12,30 +12,45 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
   const getPriorityColor = (priority: Message['priority']) => {
     switch (priority) {
       case 'urgent':
-        return 'bg-red-100 border-red-300 text-red-800';
+        return 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg';
       case 'high':
-        return 'bg-orange-100 border-orange-300 text-orange-800';
+        return 'bg-gradient-to-r from-orange-400 to-amber-400 text-white shadow-md';
       case 'normal':
-        return 'bg-blue-100 border-blue-300 text-blue-800';
+        return 'bg-gradient-to-r from-blue-400 to-indigo-400 text-white shadow-md';
       case 'low':
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'bg-gradient-to-r from-gray-400 to-slate-400 text-white shadow-sm';
       default:
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'bg-gradient-to-r from-gray-400 to-slate-400 text-white shadow-sm';
     }
   };
 
   const getPriorityLabel = (priority: Message['priority']) => {
     switch (priority) {
       case 'urgent':
-        return '紧急';
+        return '🔴 紧急';
       case 'high':
-        return '高';
+        return '🟠 高';
       case 'normal':
-        return '普通';
+        return '🔵 普通';
       case 'low':
-        return '低';
+        return '🟢 低';
       default:
-        return '普通';
+        return '🔵 普通';
+    }
+  };
+
+  const getPriorityIcon = (priority: Message['priority']) => {
+    switch (priority) {
+      case 'urgent':
+        return '🚨';
+      case 'high':
+        return '⚡';
+      case 'normal':
+        return '📌';
+      case 'low':
+        return '📝';
+      default:
+        return '📌';
     }
   };
 
@@ -52,35 +67,59 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
 
   if (messages.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        暂无留言，点击上方按钮添加第一条留言吧！
+      <div className="text-center py-16">
+        <div className="text-8xl mb-6">📝</div>
+        <h3 className="text-xl font-semibold text-gray-600 mb-2">还没有留言哦</h3>
+        <p className="text-gray-500">点击上方按钮添加第一条留言吧！</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {messages.map((message) => (
-        <Card key={message.id} className="relative">
-          <CardHeader>
-            <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      {messages.map((message, index) => (
+        <Card 
+          key={message.id} 
+          className="relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-white/90 backdrop-blur-sm border-0"
+          style={{
+            animationDelay: `${index * 0.1}s`
+          }}
+        >
+          {/* 优先级指示条 */}
+          <div className={`absolute top-0 left-0 w-full h-2 ${getPriorityColor(message.priority)}`}></div>
+          
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
               <div className="flex-1">
-                <CardTitle className="text-xl mb-2">{message.title}</CardTitle>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>作者: {message.author}</span>
-                  <span>•</span>
-                  <span>{formatDate(message.created_at)}</span>
-                  <span className={`px-2 py-1 rounded text-xs border ${getPriorityColor(message.priority)}`}>
-                    {getPriorityLabel(message.priority)}
-                  </span>
+                <CardTitle className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2 mb-3">
+                  <span className="text-2xl">{getPriorityIcon(message.priority)}</span>
+                  {message.title}
+                </CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">👤 {message.author}</span>
+                  </div>
+                  <span className="hidden sm:inline">•</span>
+                  <div className="flex items-center gap-1">
+                    <span>🕒 {formatDate(message.created_at)}</span>
+                  </div>
                 </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getPriorityColor(message.priority)}`}>
+                  {getPriorityLabel(message.priority)}
+                </span>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap">{message.content}</p>
+          
+          <CardContent className="py-4">
+            <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-200">
+              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{message.content}</p>
+            </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
+          
+          <CardFooter className="flex justify-end pt-0 pb-4">
             <Button
               variant="destructive"
               size="sm"
@@ -89,8 +128,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
                   onDelete(message.id);
                 }
               }}
+              className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
             >
-              删除
+              🗑️ 删除
             </Button>
           </CardFooter>
         </Card>

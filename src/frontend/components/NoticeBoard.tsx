@@ -87,46 +87,68 @@ const NoticeBoard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>加载中...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <div className="text-lg text-gray-600 font-medium">加载中...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-3xl font-bold">家庭留言板</CardTitle>
-              <Button onClick={() => setShowForm(!showForm)}>
-                {showForm ? '取消' : '添加留言'}
-              </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-6xl">
+        {/* 头部区域 */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                🏠 家庭留言板
+              </h1>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                温馨留言，传递关爱
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                {error}
+            <Button 
+              onClick={() => setShowForm(!showForm)}
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              size="lg"
+            >
+              {showForm ? '✕ 取消' : '✏️ 添加留言'}
+            </Button>
+          </div>
+        </div>
+
+        {/* 错误提示 */}
+        {error && (
+          <div className="mb-6 mx-4 sm:mx-0">
+            <div className="p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+              <div className="flex items-center">
+                <div className="text-red-400 mr-3">⚠️</div>
+                <div className="text-red-700 font-medium">{error}</div>
               </div>
-            )}
-            
-            {showForm && (
-              <div className="mb-6">
-                <MessageForm 
-                  onSubmit={createMessage}
-                  onCancel={() => setShowForm(false)}
-                />
-              </div>
-            )}
-            
-            <MessageList 
-              messages={messages} 
-              onDelete={deleteMessage}
+            </div>
+          </div>
+        )}
+        
+        {/* 表单区域 */}
+        {showForm && (
+          <div className="mb-6 mx-4 sm:mx-0">
+            <MessageForm 
+              onSubmit={createMessage}
+              onCancel={() => setShowForm(false)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        )}
+        
+        {/* 留言列表区域 */}
+        <div className="mx-4 sm:mx-0">
+          <MessageList 
+            messages={messages} 
+            onDelete={deleteMessage}
+          />
+        </div>
       </div>
     </div>
   );
