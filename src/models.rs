@@ -12,6 +12,7 @@ pub struct Message {
   pub updated_at: DateTime<Utc>,
   pub priority: Priority,
   pub expires_at: Option<DateTime<Utc>>,
+  pub enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -39,4 +40,5 @@ pub struct UpdateMessage {
   pub author: Option<String>,
   pub priority: Option<Priority>,
   pub expires_at: Option<DateTime<Utc>>,
+  pub enabled: Option<bool>,
 }

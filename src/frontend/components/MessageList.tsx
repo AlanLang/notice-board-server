@@ -6,9 +6,10 @@ import { Message } from './NoticeBoard';
 interface MessageListProps {
   messages: Message[];
   onDelete: (id: string) => void;
+  onToggleEnabled: (id: string) => void;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, onDelete, onToggleEnabled }) => {
   const getPriorityColor = (priority: Message['priority']) => {
     switch (priority) {
       case 'urgent':
@@ -80,7 +81,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
       {messages.map((message, index) => (
         <Card 
           key={message.id} 
-          className="relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-white/90 backdrop-blur-sm border-0"
+          className={`relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] backdrop-blur-sm border-0 ${
+            message.enabled 
+              ? 'bg-white/90' 
+              : 'bg-gray-200/80 opacity-75'
+          }`}
           style={{
             animationDelay: `${index * 0.1}s`
           }}
@@ -109,6 +114,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getPriorityColor(message.priority)}`}>
                   {getPriorityLabel(message.priority)}
                 </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  message.enabled 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {message.enabled ? '✅ 启用' : '⏸️ 禁用'}
+                </span>
               </div>
             </div>
           </CardHeader>
@@ -119,7 +131,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onDelete }) => {
             </div>
           </CardContent>
           
-          <CardFooter className="flex justify-end pt-0 pb-4">
+          <CardFooter className="flex justify-end gap-3 pt-0 pb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onToggleEnabled(message.id)}
+              className={`font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+                message.enabled 
+                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300' 
+                  : 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300'
+              }`}
+            >
+              {message.enabled ? '⏸️ 禁用' : '▶️ 启用'}
+            </Button>
             <Button
               variant="destructive"
               size="sm"

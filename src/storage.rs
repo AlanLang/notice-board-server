@@ -78,6 +78,7 @@ impl FileStorage {
       updated_at: now,
       priority: msg.priority,
       expires_at: msg.expires_at,
+      enabled: true, // 新留言默认启用
     };
 
     {
@@ -90,7 +91,7 @@ impl FileStorage {
     Ok(message)
   }
 
-  // 获取所有留言
+  // 获取所有留言（包括禁用的，用于Web管理界面）
   pub async fn get_messages(&self) -> Result<Vec<Message>> {
     let data = self.data.read().await;
     let now = Utc::now();
@@ -99,8 +100,40 @@ impl FileStorage {
       .messages
       .values()
       .filter(|msg| {
-        // 过滤过期的留言
+        // 只过滤过期的留言，保留禁用的留言
         msg.expires_at.is_none() || msg.expires_at.unwrap() > now
+      })
+      .cloned()
+      .collect();
+
+    // 按优先级和创建时间排序
+    messages.sort_by(|a, b| {
+      let priority_order = |p: &Priority| match p {
+        Priority::Urgent => 1,
+        Priority::High => 2,
+        Priority::Normal => 3,
+        Priority::Low => 4,
+      };
+
+      priority_order(&a.priority)
+        .cmp(&priority_order(&b.priority))
+        .then(b.created_at.cmp(&a.created_at))
+    });
+
+    Ok(messages)
+  }
+
+  // 获取活跃留言（仅启用且未过期，用于客户端设备）
+  pub async fn get_active_messages(&self) -> Result<Vec<Message>> {
+    let data = self.data.read().await;
+    let now = Utc::now();
+
+    let mut messages: Vec<Message> = data
+      .messages
+      .values()
+      .filter(|msg| {
+        // 过滤过期和禁用的留言
+        msg.enabled && (msg.expires_at.is_none() || msg.expires_at.unwrap() > now)
       })
       .cloned()
       .collect();
@@ -149,6 +182,9 @@ impl FileStorage {
         }
         if let Some(expires_at) = update.expires_at {
           message.expires_at = Some(expires_at);
+        }
+        if let Some(enabled) = update.enabled {
+          message.enabled = enabled;
         }
         message.updated_at = now;
         data.last_updated = now;
@@ -240,7 +276,7 @@ impl FileStorage {
     let active_messages = data
       .messages
       .values()
-      .filter(|msg| msg.expires_at.is_none() || msg.expires_at.unwrap() > now)
+      .filter(|msg| msg.enabled && (msg.expires_at.is_none() || msg.expires_at.unwrap() > now))
       .count();
 
     let online_clients = data

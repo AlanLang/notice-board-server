@@ -29,6 +29,15 @@ pub async fn get_messages(
     }
 }
 
+pub async fn get_active_messages(
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    match storage.get_active_messages().await {
+        Ok(messages) => Ok(Json(json!(messages))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
 pub async fn get_message(
     Path(id): Path<String>,
     State(storage): State<AppState>,
@@ -65,6 +74,36 @@ pub async fn delete_message(
     match storage.delete_message(uuid).await {
         Ok(true) => Ok(StatusCode::NO_CONTENT),
         Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn toggle_message_enabled(
+    Path(id): Path<String>,
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let uuid = Uuid::parse_str(&id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    
+    // 先获取当前留言状态
+    let current_message = match storage.get_message(uuid).await {
+        Ok(Some(message)) => message,
+        Ok(None) => return Err(StatusCode::NOT_FOUND),
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
+    };
+    
+    // 切换 enabled 状态
+    let update = UpdateMessage {
+        title: None,
+        content: None,
+        author: None,
+        priority: None,
+        expires_at: None,
+        enabled: Some(!current_message.enabled),
+    };
+    
+    match storage.update_message(uuid, update).await {
+        Ok(Some(message)) => Ok(Json(json!(message))),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }

@@ -13,6 +13,7 @@ export interface Message {
   updated_at: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
   expires_at?: string;
+  enabled: boolean;
 }
 
 export interface CreateMessage {
@@ -73,6 +74,22 @@ const NoticeBoard: React.FC = () => {
 
       if (!response.ok) {
         throw new Error('Failed to delete message');
+      }
+
+      await fetchMessages();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An error occurred');
+    }
+  };
+
+  const toggleMessageEnabled = async (id: string) => {
+    try {
+      const response = await fetch(`/api/messages/${id}/toggle`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle message status');
       }
 
       await fetchMessages();
@@ -147,6 +164,7 @@ const NoticeBoard: React.FC = () => {
           <MessageList 
             messages={messages} 
             onDelete={deleteMessage}
+            onToggleEnabled={toggleMessageEnabled}
           />
         </div>
       </div>

@@ -13,8 +13,8 @@ use tower_http::{
 };
 
 use handlers::{
-  AppState, create_message, delete_message, get_clients, get_message, get_messages, get_stats,
-  update_message,
+  AppState, create_message, delete_message, get_active_messages, get_clients, get_message, get_messages, get_stats,
+  toggle_message_enabled, update_message,
 };
 use storage::FileStorage;
 
@@ -36,10 +36,12 @@ async fn main() -> anyhow::Result<()> {
   // API 路由
   let api_routes = Router::new()
     .route("/messages", get(get_messages).post(create_message))
+    .route("/messages/active", get(get_active_messages))
     .route(
       "/messages/{id}",
       get(get_message).put(update_message).delete(delete_message),
     )
+    .route("/messages/{id}/toggle", post(toggle_message_enabled))
     .route("/clients", get(get_clients))
     .route("/stats", get(get_stats))
     .with_state(app_state);
