@@ -7,7 +7,7 @@ use tokio::fs;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::models::{CreateMessage, Message, Priority, UpdateMessage};
+use crate::models::{CreateMessage, Message, Priority, UpdateMessage, PaginatedResponse};
 
 // 数据存储结构
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
@@ -153,6 +153,56 @@ impl FileStorage {
     });
 
     Ok(messages)
+  }
+
+  // 分页获取活跃留言（仅启用且未过期）
+  pub async fn get_active_messages_paginated(&self, page: u32, page_size: u32) -> Result<PaginatedResponse<Message>> {
+    let data = self.data.read().await;
+    let now = Utc::now();
+
+    let mut messages: Vec<Message> = data
+      .messages
+      .values()
+      .filter(|msg| {
+        // 过滤过期和禁用的留言
+        msg.enabled && (msg.expires_at.is_none() || msg.expires_at.unwrap() > now)
+      })
+      .cloned()
+      .collect();
+
+    // 按优先级和创建时间排序
+    messages.sort_by(|a, b| {
+      let priority_order = |p: &Priority| match p {
+        Priority::Urgent => 1,
+        Priority::High => 2,
+        Priority::Normal => 3,
+        Priority::Low => 4,
+      };
+
+      priority_order(&a.priority)
+        .cmp(&priority_order(&b.priority))
+        .then(b.created_at.cmp(&a.created_at))
+    });
+
+    let total = messages.len();
+    let total_pages = (total as f64 / page_size as f64).ceil() as u32;
+    
+    let start = ((page - 1) * page_size) as usize;
+    let end = (start + page_size as usize).min(total);
+    
+    let paginated_messages = if start < total {
+      messages[start..end].to_vec()
+    } else {
+      Vec::new()
+    };
+
+    Ok(PaginatedResponse {
+      data: paginated_messages,
+      total,
+      page,
+      page_size,
+      total_pages,
+    })
   }
 
   // 获取单个留言

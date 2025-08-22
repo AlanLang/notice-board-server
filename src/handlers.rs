@@ -1,12 +1,12 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
 };
 use serde_json::{json, Value};
 use uuid::Uuid;
 
-use crate::{storage::FileStorage, models::{CreateMessage, UpdateMessage}};
+use crate::{storage::FileStorage, models::{CreateMessage, UpdateMessage, PaginationParams}};
 
 pub type AppState = std::sync::Arc<FileStorage>;
 
@@ -34,6 +34,19 @@ pub async fn get_active_messages(
 ) -> Result<Json<Value>, StatusCode> {
     match storage.get_active_messages().await {
         Ok(messages) => Ok(Json(json!(messages))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn get_messages_paginated(
+    Query(params): Query<PaginationParams>,
+    State(storage): State<AppState>,
+) -> Result<Json<Value>, StatusCode> {
+    let page = params.page.unwrap_or(1).max(1);
+    let page_size = params.page_size.unwrap_or(10).clamp(1, 100);
+    
+    match storage.get_active_messages_paginated(page, page_size).await {
+        Ok(response) => Ok(Json(json!(response))),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
